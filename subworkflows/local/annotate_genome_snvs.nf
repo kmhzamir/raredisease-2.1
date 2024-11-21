@@ -20,6 +20,7 @@ include { TABIX_TABIX as TABIX_BCFTOOLS_VIEW    } from '../../modules/nf-core/ta
 include { GATK4_SELECTVARIANTS                  } from '../../modules/nf-core/gatk4/selectvariants/main'
 include { ANNOTATE_CADD                         } from './annotation/annotate_cadd'
 include { ANNOTATE_RHOCALLVIZ                   } from './annotation/annotate_rhocallviz'
+include { MERGE_VCF_COLUMNS                     } from '../../modules/nf-core/mergevcfcolumns/main'
 
 workflow ANNOTATE_GENOME_SNVS {
 
@@ -160,9 +161,11 @@ workflow ANNOTATE_GENOME_SNVS {
             .map { meta, tab -> [meta - meta.subMap('prefix'), tab] }
             .set { ch_concat_out }
 
-        TABIX_BCFTOOLS_CONCAT (ch_concat_out)
+        MERGE_VCF_COLUMNS (ch_concat_out,ch_vcf)
+        
+        TABIX_BCFTOOLS_CONCAT (MERGE_VCF_COLUMNS.out.cleaned_output)
 
-        ch_vep_ann   = ch_concat_out
+        ch_vep_ann   = MERGE_VCF_COLUMNS.out.cleaned_output
         ch_vep_index = TABIX_BCFTOOLS_CONCAT.out.tbi
 
         ch_versions = ch_versions.mix(BCFTOOLS_ROH.out.versions)
